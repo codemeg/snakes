@@ -2,7 +2,7 @@ import pygame,random
 
 BLACK	= (   0,   0,   0)
 WHITE	= ( 255, 255, 255)
-GREEN	= (  30, 255, 30)
+GREEN	= (  30, 255,  30)
 RED	    = ( 255,   0,   0)
 BLUE    = (   0,   0, 255)
 YELLOW  = ( 255, 255,   0)
@@ -98,30 +98,34 @@ class ComputerSnake(Snake):
 		Snake.__init__(self,color,start_x_y, player_number)
 
 	def which_direction(self,grid):
-		if self.pixels != 1:
-			return self.new_direction
+		if self.pixels != 19:
+			return self.direction
+		if random.randint(1,10) == 1:
+			print "I turned randomly"
+			return self.turn_randomly()
 
 		# if next square is blocked, turn
 		if self.direction == "up":
-			if grid[self.y-1][self.x] != 0:
-				return self.turn()
+			if grid[self.y-2][self.x] != 0:
+				print "I turned not up"
+				return self.turn_randomly()
 		if self.direction == "down":
-			if grid[self.y+1][self.x] != 0:
-				return self.turn()
+			if grid[self.y+2][self.x] != 0:
+				print "I turned not down"
+				return self.turn_randomly()
 		if self.direction == "left":
-			if grid[self.y][self.x-1] != 0:
-				return self.turn()
+			if grid[self.y][self.x-2] != 0:
+				print "I turned not left"
+				return self.turn_randomly()
 		if self.direction == "right":
-			if grid[self.y][self.x+1] != 0:
-				return self.turn()
+			if grid[self.y][self.x+2] != 0:
+				print "I turned not right"
+				return self.turn_randomly()
+				
+		# if none of the above, keep going the same direction
+		return self.direction
 
-		# turn randomly
-		if random.randint(1,10) == 1:
-			return self.turn()
-
-		return self.new_direction
-
-	def turn(self):
+	def turn_randomly(self):
 		if self.direction == "up" or self.direction == "down":
 			return random.choice(["left", "right"])
 		elif self.direction == "left" or self.direction == "right":
