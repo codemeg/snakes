@@ -68,6 +68,7 @@ class Snake():
 	def show(self):
 		x = self.x * GRID_SIZE	# convert x and y coordinates to pixels
 		y = self.y * GRID_SIZE
+		pygame.draw.rect(screen, RED, [x,y,self.width,self.width], 1)
 		if self.direction == "up":
 			y = y - self.pixels
 		if self.direction == "down":
@@ -158,7 +159,7 @@ class ComputerSnake(Snake):
 		return False
 
 
-def draw_grid(grid):
+def draw_arena(grid):
 	for row in range(30):
 		for col in range(40):
 			if grid[row][col] == 9:
@@ -166,6 +167,12 @@ def draw_grid(grid):
 			for i in range(len(colors)):
 				if grid[row][col] == i+1:
 					pygame.draw.rect(screen, colors[i], [col*GRID_SIZE, row*GRID_SIZE, GRID_SIZE, GRID_SIZE], 0)
+
+def draw_grid():
+	for row in range(30):
+		pygame.draw.line(screen, BLACK, [0,row*GRID_SIZE],[width*GRID_SIZE,row*GRID_SIZE],1)
+	for col in range(40):
+		pygame.draw.line(screen, BLACK, [col*GRID_SIZE,0],[col*GRID_SIZE, height*GRID_SIZE],1)
 				
 
 def draw_game_over(): # doesn't work yet
@@ -226,7 +233,7 @@ done = False
 clock = pygame.time.Clock()
 pygame.mouse.set_visible(False)
 
-direction = ["up","up"]	# first direction
+direction = ["up","up"]	# initial direction
 
 # -------- Main Program Loop -----------
 while not done:
@@ -277,7 +284,8 @@ while not done:
 	# --- Drawing code should go here
 
 	screen.fill(LTGREY)
-	draw_grid(grid)
+	draw_arena(grid)
+	draw_grid()
 
 	for i in range(computer_players):
 		snakes[i].show()
