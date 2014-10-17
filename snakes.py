@@ -57,10 +57,10 @@ class Snake():
 				self.stop()
 				self.x = old_x
 				self.y = old_y
-				#print self.x, self.y, self.direction
+				print self.x, self.y, self.direction
 				print "Game Over"
 			else:
-				grid[self.y][self.x] = self.player_number 	# later change this to a player number
+				grid[self.y][self.x] = self.player_number
 
 			self.pixels = 0
 			self.direction = self.new_direction
@@ -98,6 +98,8 @@ class ComputerSnake(Snake):
 		Snake.__init__(self,color,start_x_y, player_number)
 
 	def which_direction(self,grid):
+		"""How the computer decides which direction to go"""
+
 		if self.pixels != 19:
 			return self.direction
 		if random.randint(1,10) == 1:
@@ -123,6 +125,7 @@ class ComputerSnake(Snake):
 		return self.direction
 
 	def turn_randomly(self,grid):
+		"""Changes direction randomly but tries not to immediately crash"""
 		if self.direction == "up" or self.direction == "down":
 			if self.space_blocked(grid,"left"):
 				return "right"
@@ -137,8 +140,9 @@ class ComputerSnake(Snake):
 				return "up"
 			else:
 				return random.choice(["up", "down"])
-				
+
 	def space_blocked(self,grid,direction):
+		"""Given a direction, would the next space be blocked"""
 		if direction == "up":
 			if grid[self.y-1][self.x] != 0:
 				return True
@@ -178,16 +182,22 @@ def print_grid(grid):
 
 
 # making snakes
-number_of_players = 3   # int(raw_input("How many snakes? "))
+human_players = 2
+computer_players = 2   # int(raw_input("How many snakes? "))
+total_players = human_players + computer_players
+humans = []
 snakes = []
 colors = [YELLOW,GREEN,BLUE,RED]
 starting_points = [[10,11],[10,21],[30,11],[30,21]]
 random.shuffle(starting_points)
-print starting_points
-for i in range(number_of_players):
-	snakes.append(ComputerSnake(colors[i+1],starting_points[i+1],i+2))
 
-my_snake = Snake(colors[0],starting_points[0],1)
+for i in range(human_players):
+	humans.append(Snake(colors[i], starting_points[i], i+1))
+
+for i in range(computer_players):
+	snakes.append(ComputerSnake(colors[human_players+i],starting_points[human_players+i], human_players+i+1))
+
+#my_snake = Snake(colors[0],starting_points[0],1)
 
 
 pygame.init()
@@ -216,7 +226,7 @@ done = False
 clock = pygame.time.Clock()
 pygame.mouse.set_visible(False)
 
-direction = "up"	# first direction
+direction = ["up","up"]	# first direction
 
 # -------- Main Program Loop -----------
 while not done:
@@ -229,22 +239,35 @@ while not done:
 			if event.key == pygame.K_ESCAPE:
 				pygame.quit()
 			if event.key == pygame.K_LEFT:
-				if direction == "up" or direction == "down":
-					direction = "left"
+				if direction[0] == "up" or direction[0] == "down":
+					direction[0] = "left"
 			if event.key == pygame.K_RIGHT:
-				if direction == "up" or direction == "down":
-					direction = "right"
+				if direction[0] == "up" or direction[0] == "down":
+					direction[0] = "right"
 			if event.key == pygame.K_UP:
-				if direction == "left" or direction == "right":
-					direction = "up"
+				if direction[0] == "left" or direction[0] == "right":
+					direction[0] = "up"
 			if event.key == pygame.K_DOWN:
-				if direction == "left" or direction == "right":
-					direction = "down"
+				if direction[0] == "left" or direction[0] == "right":
+					direction[0] = "down"
+			if event.key == pygame.K_a:
+				if direction[1] == "up" or direction[1] == "down":
+					direction[1] = "left"
+			if event.key == pygame.K_d:
+				if direction[1] == "up" or direction[1] == "down":
+					direction[1] = "right"
+			if event.key == pygame.K_w:
+				if direction[1] == "left" or direction[1] == "right":
+					direction[1] = "up"
+			if event.key == pygame.K_s:
+				if direction[1] == "left" or direction[1] == "right":
+					direction[1] = "down"
 
-	if not my_snake.stopped:
-		my_snake.move(grid,direction)
+	for i in range(human_players):
+		if not humans[i].stopped:
+			humans[i].move(grid,direction[i])
 
-	for i in range(number_of_players):
+	for i in range(computer_players):
 		if not snakes[i].stopped:
 			computer_direction = snakes[i].which_direction(grid)
 			snakes[i].move(grid,computer_direction)
@@ -256,10 +279,10 @@ while not done:
 	screen.fill(LTGREY)
 	draw_grid(grid)
 
-	for i in range(number_of_players):
+	for i in range(computer_players):
 		snakes[i].show()
-
-	my_snake.show()
+	for i in range(human_players):
+		humans[i].show()
 
 	pygame.display.flip()
 
