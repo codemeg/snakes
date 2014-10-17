@@ -102,34 +102,56 @@ class ComputerSnake(Snake):
 			return self.direction
 		if random.randint(1,10) == 1:
 			print "I turned randomly"
-			return self.turn_randomly()
+			return self.turn_randomly(grid)
 
 		# if next square is blocked, turn
+		
 		if self.direction == "up":
 			if grid[self.y-2][self.x] != 0:
-				print "I turned not up"
-				return self.turn_randomly()
+				return self.turn_randomly(grid)
 		if self.direction == "down":
 			if grid[self.y+2][self.x] != 0:
-				print "I turned not down"
-				return self.turn_randomly()
+				return self.turn_randomly(grid)
 		if self.direction == "left":
 			if grid[self.y][self.x-2] != 0:
-				print "I turned not left"
-				return self.turn_randomly()
+				return self.turn_randomly(grid)
 		if self.direction == "right":
 			if grid[self.y][self.x+2] != 0:
-				print "I turned not right"
-				return self.turn_randomly()
-				
+				return self.turn_randomly(grid)
+		
 		# if none of the above, keep going the same direction
 		return self.direction
 
-	def turn_randomly(self):
+	def turn_randomly(self,grid):
 		if self.direction == "up" or self.direction == "down":
-			return random.choice(["left", "right"])
+			if self.space_blocked(grid,"left"):
+				return "right"
+			elif self.space_blocked(grid,"right"):
+				return "left"
+			else:
+				return random.choice(["left", "right"])
 		elif self.direction == "left" or self.direction == "right":
-			return random.choice(["up", "down"])
+			if self.space_blocked(grid,"up"):
+				return "down"
+			elif self.space_blocked(grid,"down"):
+				return "up"
+			else:
+				return random.choice(["up", "down"])
+				
+	def space_blocked(self,grid,direction):
+		if direction == "up":
+			if grid[self.y-1][self.x] != 0:
+				return True
+		if direction == "down":
+			if grid[self.y+1][self.x] != 0:
+				return True
+		if direction == "left":
+			if grid[self.y][self.x-1] != 0:
+				return True
+		if direction == "right":
+			if grid[self.y][self.x+1] != 0:
+				return True
+		return False
 
 
 def draw_grid(grid):
