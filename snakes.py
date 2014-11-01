@@ -3,8 +3,8 @@ import pygame,random
 BLACK	= (   0,   0,   0)
 WHITE	= ( 255, 255, 255)
 GREEN	= (  30, 255,  30)
-RED	    = ( 255,   0,   0)
-BLUE    = (   0,   0, 255)
+RED		= ( 255,   0,   0)
+BLUE	= (   0,   0, 255)
 YELLOW  = ( 255, 255,   0)
 DKGREY  = (  50,  50,  50)
 LTGREY  = ( 220, 220, 220)
@@ -14,15 +14,26 @@ GRID_SIZE = 20
 SPEED = 1
 
 class Game():
-	def __init__(self, boulders = True, treats=True, wrapping=False, diagonal=False, tail_mode=False):
+	def __init__(self, boulders=True, treats=True, wrapping=False, diagonal=False, tail_mode=False):
 		self.boulders = boulders
 		self.treats = treats
 		self.wrapping = wrapping
 		self.diagonal = diagonal
 		self.tail_mode = tail_mode
+	def place_border(self,grid):
+		if self.wrapping == True:
+			return grid
+		else:
+			for row in range(30):
+				grid[row][0] = 9
+				grid[row][39] = 9
+			for col in range(40):
+				grid[0][col] = 9
+				grid[29][col] = 9
+		return grid
 	def place_boulders(self,grid):
 		if self.boulders == False:
-			return
+			return grid
 		else:
 			for row in range(30):
 				for col in range(40):
@@ -32,13 +43,13 @@ class Game():
 		return grid
 	def place_treats(self,grid):
 		if self.treats == False:
-			return
+			return grid
 		else:
 			for row in range(30):
 				for col in range(40):
 					if random.randint(1,100) == 1:	# 1 in 100 chance
 						if grid[row][col] == 0:		# if that space is empty
-							grid[row][col] = 5 	# then put a 'treat'
+							grid[row][col] = -1 	# then put a 'treat'
 		return grid
 
 
@@ -49,7 +60,6 @@ class Treat():	# later
 
 class Snake():
 	def __init__(self,color,start_x_y, player_number, human):
-		self.width = GRID_SIZE
 		self.color = color
 		self.stopped = False
 		self.x = start_x_y[0]  # starting x coordinate
@@ -57,7 +67,7 @@ class Snake():
 		self.direction = "up"
 		self.new_direction = "up"
 		self.speed = SPEED
-		self.pixels = 0
+		self.pixels = 0			# length of head into square that it's in
 		self.player_number = player_number  # players are numbered from 1-4
 		self.human = human   # if human, True, if computer, False
 	def stop(self):
@@ -69,7 +79,7 @@ class Snake():
 		y = self.y * GRID_SIZE
 
 		# red box around snake heads to visualize
-		pygame.draw.rect(screen, RED, [x,y,self.width,self.width], 1)
+		pygame.draw.rect(screen, RED, [x,y,GRID_SIZE,GRID_SIZE], 1)
 
 		if self.direction == "up":
 			y = y - self.pixels
@@ -79,7 +89,7 @@ class Snake():
 			x = x - self.pixels
 		if self.direction == "right":
 			x = x + self.pixels
-		pygame.draw.rect(screen, self.color, [x,y,self.width,self.width], 0)
+		pygame.draw.rect(screen, self.color, [x,y,GRID_SIZE,GRID_SIZE], 0)
 		if self.direction == "up":
 			pygame.draw.ellipse(screen, BLACK, [x+5,y+5,1,1])
 			pygame.draw.ellipse(screen, BLACK, [x+14,y+5,1,1])
@@ -97,11 +107,12 @@ class Snake():
 	def move(self, grid, direction):
 		self.new_direction = direction
 
-		self.pixels += 1
-		if self.pixels == GRID_SIZE:
+		if self.pixels == GRID_SIZE-1:
+			self.pixels = 0
+		
+		if self.pixels == 0:
 			old_x = self.x
 			old_y = self.y
-			#self.direction = self.new_direction
 
 			if self.direction == "up":
 				self.y -= self.speed
@@ -112,28 +123,29 @@ class Snake():
 			if self.direction == "right":
 				self.x += self.speed
 
-			# wrap around screen
-			if self.x > width - 1:
-				self.x = 0
-			if self.x < 0:
-				self.x = width - 1
-			if self.y > height - 1:
-				self.y = 0
-			if self.y < 0:
-				self.y = height - 1
-
-			if grid[self.y][self.x] != 0:
+			if grid[self.y][self.x] > 0:	# if there's something blocking
 				draw_text("game is over")
 				self.stop()
 				self.x = old_x
 				self.y = old_y
 				print self.x, self.y, self.direction
 				print "Game Over"
-			else:
-				grid[self.y][self.x] = self.player_number
-
-			self.pixels = 0
+			grid[self.y][self.x] = self.player_number
 			self.direction = self.new_direction
+		
+		# wrap around screen (if there's no border)
+		if self.x > WIDTH - 1:
+			self.x = 0
+		if self.x < 0:
+			self.x = WIDTH - 1
+		if self.y > HEIGHT - 1:
+			self.y = 0
+		if self.y < 0:
+			self.y = HEIGHT - 1
+
+		#self.pixels += 1
+
+		
 
 	
 	# COMPUTER SNAKE STUFF
@@ -141,27 +153,18 @@ class Snake():
 	def which_direction(self,grid):
 		"""How the computer decides which direction to go"""
 
-		if self.pixels != 19:
+		if self.pixels > 0:
 			return self.direction
+
+		# if next square is blocked, turn
+		if self.space_blocked(grid,self.direction):
+			return self.turn_randomly(grid)
+
+		# sometimes turn randomly
 		if random.randint(1,10) == 1:
 			print "I turned randomly"
 			return self.turn_randomly(grid)
 
-		# if next square is blocked, turn
-		
-		if self.direction == "up":
-			if grid[self.y-2][self.x] != 0:
-				return self.turn_randomly(grid)
-		if self.direction == "down":
-			if grid[self.y+2][self.x] != 0:
-				return self.turn_randomly(grid)
-		if self.direction == "left":
-			if grid[self.y][self.x-2] != 0:
-				return self.turn_randomly(grid)
-		if self.direction == "right":
-			if grid[self.y][self.x+2] != 0:
-				return self.turn_randomly(grid)
-		
 		# if none of the above, keep going the same direction
 		return self.direction
 
@@ -185,16 +188,16 @@ class Snake():
 	def space_blocked(self,grid,direction):
 		"""Given a direction, would the next space be blocked"""
 		if direction == "up":
-			if grid[self.y-1][self.x] != 0:
+			if grid[self.y-1][self.x] > 0:
 				return True
 		if direction == "down":
-			if grid[self.y+1][self.x] != 0:
+			if grid[self.y+1][self.x] > 0:
 				return True
 		if direction == "left":
-			if grid[self.y][self.x-1] != 0:
+			if grid[self.y][self.x-1] > 0:
 				return True
 		if direction == "right":
-			if grid[self.y][self.x+1] != 0:
+			if grid[self.y][self.x+1] > 0:
 				return True
 		return False
 
@@ -204,18 +207,18 @@ def draw_arena(grid):
 		for col in range(40):
 			if grid[row][col] == 9:		# border
 				pygame.draw.rect(screen, DKGREY, [col*GRID_SIZE, row*GRID_SIZE, GRID_SIZE, GRID_SIZE], 0)
-			if grid[row][col] == 5:		# treat
+			if grid[row][col] == -1:		# treat
 				pygame.draw.ellipse(screen, MAGENTA, [col*GRID_SIZE, row*GRID_SIZE, GRID_SIZE, GRID_SIZE], 5)
-			for i in range(len(colors)):
+			for i in range(len(colors)):	# snakes
 				if grid[row][col] == i+1:
 					pygame.draw.rect(screen, colors[i], [col*GRID_SIZE, row*GRID_SIZE, GRID_SIZE, GRID_SIZE], 0)
 
 def draw_grid():
 	"""Draws an ugly grid so you can see the board better"""
 	for row in range(30):
-		pygame.draw.line(screen, BLACK, [0,row*GRID_SIZE],[width*GRID_SIZE,row*GRID_SIZE],1)
+		pygame.draw.line(screen, BLACK, [0,row*GRID_SIZE],[WIDTH*GRID_SIZE,row*GRID_SIZE],1)
 	for col in range(40):
-		pygame.draw.line(screen, BLACK, [col*GRID_SIZE,0],[col*GRID_SIZE, height*GRID_SIZE],1)
+		pygame.draw.line(screen, BLACK, [col*GRID_SIZE,0],[col*GRID_SIZE, HEIGHT*GRID_SIZE],1)
 				
 
 def draw_text(text):
@@ -251,24 +254,12 @@ for i in range(len(players)):
 
 pygame.init()
 
-# making empty grid
-grid = []
-print grid
-for row in range(30):
-	grid.append([0]*40)
 
-# adding border
-for row in range(30):
-	grid[row][0] = 9
-	grid[row][39] = 9
-for col in range(40):
-	grid[0][col] = 9
-	grid[29][col] = 9
 
 # setup
-width = 40
-height = 30
-size = (width*GRID_SIZE, height*GRID_SIZE)
+WIDTH = 40
+HEIGHT = 30
+size = (WIDTH*GRID_SIZE, HEIGHT*GRID_SIZE)
 screen = pygame.display.set_mode(size)
 
 pygame.display.set_caption("Snakes")
@@ -277,11 +268,18 @@ clock = pygame.time.Clock()
 pygame.mouse.set_visible(False)
 
 direction = ["up","up"]	# initial direction
-snakes_stopped = 0
+snakes_stopped = 0	# how many are stopped (do i need this?)
 humans_stopped = 0
 
+# making empty grid
+grid = []
+print grid
+for row in range(30):
+	grid.append([0]*40)
+
+
 g = Game()
-print g.treats
+grid = g.place_border(grid)
 grid = g.place_boulders(grid)
 grid = g.place_treats(grid)
 print_grid(grid)
@@ -347,19 +345,20 @@ while not done:
 
 	pygame.display.flip()
 
-
 	for i in range(len(players)):  # this doesn't work
 		if snakes[i].human and snakes[i].stopped and humans_stopped < human_players:
 			humans_stopped += 1
 	if snakes[0].stopped and snakes[1].stopped: # need a better way to do this
 		print "all the humans are dead"
-		clock.tick(120)
-		snakes[2].speed = 2
-		snakes[3].speed = 2
-	else:
-		clock.tick(60)
+		snakes[2].speed = 1
+		snakes[3].speed = 1
+
+	clock.tick(30)
 	 
 pygame.quit()
+
+
+
 
 
 # to add:
@@ -376,7 +375,7 @@ pygame.quit()
 
 # game mode to eat each others tails
 
-# fix movement (1 square off)
+# !!! fix movement (1 square off)
 
-
-# Combined human & computer snakes into one class. Made scaffold for future game modes, added boulders & treats placed on the grid. Computer snakes speed up now when human snakes are dead (buggy)
+# snakes need to eat the treats and not be blocked by them:
+# make each square of the grid be a list? [something_that_blocks,treat]? so it could check either one depending
